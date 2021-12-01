@@ -70,7 +70,7 @@ class SparseMVP(VOProtocol):
             "\\frac{1}{%s-\\gamma^i}" % tex(mu), H)),
         rust_line_define_expression_vector_inverse_i(
             r,
-            rust_minus(mu, PowerVector(gamma, H).dumpr_at_index(sym_i)),
+            rust_minus(mu, PowerVector(gamma, H).dumpr_at_index(sym_i, voexec.coeff_manager)),
             H))
     c = get_named_vector("c")
     voexec.prover_computes(Math(c).assign()
@@ -99,7 +99,7 @@ class SparseMVP(VOProtocol):
     rnu = get_named_vector("rnu")
     voexec.prover_rust_define_expression_vector_inverse_i(
         rnu,
-        rust_minus(nu, PowerVector(gamma, K).dumpr_at_index(sym_i)),
+        rust_minus(nu, PowerVector(gamma, K).dumpr_at_index(sym_i, voexec.coeff_manager)),
         K)
     voexec.prover_computes(Math(h).assign(
         ExpressionVector("\\frac{1}{%s-\\gamma^i}" % tex(nu), K)

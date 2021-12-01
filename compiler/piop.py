@@ -117,7 +117,7 @@ class CombinePolynomial(object):
           latex(coeff_builder.coeff), coeff_builder.poly.dumps()))
       poly_sum_rust_items.append(rust(coeff_builder.coeff))
       poly_sum_rust_items.append(
-          coeff_builder.poly.dumpr_at_index(sym_i - coeff_builder.shifts))
+          coeff_builder.poly.dumpr_at_index(sym_i - coeff_builder.shifts, None))
 
     computes.poly_rust_items.append(
         rust_line_define_vec_mut(self.poly.to_vec(), rust_expression_vector_i(
@@ -196,7 +196,7 @@ class PIOPExecution(PublicCoinProtocolExecution):
     if not vec.local_evaluate:
       self.eval_query(name, point, poly)
       self.prover_rust_define_eval_vector_expression_i(
-          name, point, vec.dumpr_at_index(sym_i), size)
+          name, point, vec.dumpr_at_index(sym_i, self.coeff_manager), size)
     else:
       self.verifier_computes_latex(Math(name).assign(poly.dumps_var(point)))
       self.verifier_rust_define(name, vec.hint_computation(point))

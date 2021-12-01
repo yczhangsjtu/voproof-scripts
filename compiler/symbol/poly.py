@@ -31,8 +31,8 @@ class NamedPolynomial(_NamedBasic):
   def dumpr(self):
     return "%s_poly" % super(NamedPolynomial, self).dumpr()
 
-  def dumpr_at_index(self, index):
-    return self._vector.dumpr_at_index(index)
+  def dumpr_at_index(self, index, coeff_manager):
+    return self._vector.dumpr_at_index(index, coeff_manager)
 
 
 class PolynomialCommitment(object):
@@ -84,8 +84,8 @@ class NamedVectorPolynomial(object):
   def dumpr(self):
     return "%s_poly" % self.vector.dumpr()
 
-  def dumpr_at_index(self, index):
-    return self.vector.dumpr_at_index(index)
+  def dumpr_at_index(self, index, coeff_manager):
+    return self.vector.dumpr_at_index(index, coeff_manager)
     
   def to_vec(self):
     return self.vector

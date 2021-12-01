@@ -144,7 +144,7 @@ def analyzeR1CS():
   x = get_named_vector("x")
   x.local_evaluate = True
   x.hint_computation = lambda z: RustMacro("eval_vector_expression").append([
-      z, Symbol("i"), x.dumpr_at_index(Symbol("i")), ell
+      z, Symbol("i"), x.dumpr_at_index(Symbol("i"), None), ell
   ])
   ppargs = (H, K, Sa, Sb, Sc)
   execargs = (x, get_named_vector("w"), ell)
@@ -271,6 +271,6 @@ if __name__ == '__main__':
   # analyzeR1CSProverEfficient()
   # analyzeHPRProverEfficient()
   # analyzePOVProverEfficient()
-  # analyzeR1CS()
+  analyzeR1CS()
   # analyzeHPR()
-  analyzePOV()
+  # analyzePOV()

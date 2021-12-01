@@ -7,6 +7,7 @@ from .symbol.vector import NamedVector, PowerVector, UnitVector, \
     vec_lists_dump_at_index_then_inner_product
 from .symbol.names import get_name
 from .symbol.poly import get_named_polynomial
+from .symbol.coeff_manager import CoeffManager
 from .builder.latex import LaTeXBuilder, AccumulationVector, Math, Itemize, \
     add_paren_if_add, tex
 from .builder.rust import *
@@ -93,7 +94,7 @@ class ExtendedHadamard(object):
                              for i, side in enumerate(self.items)
                              if not self.ignored(i)])
 
-  def dump_linear_combination_at_i(self, vector_size):
+  def dump_linear_combination_at_i(self, vector_size, coeff_manager):
     """
     Because the first n elements of t should be zero, we only
     care about the vector starting from n+1
@@ -102,7 +103,7 @@ class ExtendedHadamard(object):
         (side.a, side.b)
         for i, side in enumerate(self.items)
         if not self.ignored(i)
-    ], simplify(sym_i + vector_size), collect_symbols=self.alpha)
+    ], simplify(sym_i + vector_size), coeff_manager, collect_symbols=self.alpha)
 
     """
     rust_linear_combination_base_zero(*[
@@ -151,13 +152,13 @@ class ExtendedHadamard(object):
     return self.generate_hx_vector_pair_combination(omega) \
         .generate_vector_combination(omega)
 
-  def dump_hz_rust(self, z0, z, size):
+  def dump_hz_rust(self, z0, z, size, coeff_manager):
     lc = rust_linear_combination_base_zero()
     for had in self.items:
       lc.append(rust_eval_vector_expression_i(
-          z0, VectorCombination._from(had.a).dumpr_at_index(sym_i), size))
+          z0, VectorCombination._from(had.a).dumpr_at_index(sym_i, coeff_manager), size))
       lc.append(rust_eval_vector_expression_i(
-          z, VectorCombination._from(had.b).dumpr_at_index(sym_i), size))
+          z, VectorCombination._from(had.b).dumpr_at_index(sym_i, coeff_manager), size))
     return lc
 
 
@@ -259,8 +260,8 @@ class PIOPFromVOProtocol(object):
       check_individual_hadamard.append(rust_check_vector_eq(
           rust_expression_vector_i(
               rust_mul(
-                  (side.a * (1/alpha_power)).dumpr_at_index(sym_i),
-                  side.b.dumpr_at_index(sym_i)),
+                  (side.a * (1/alpha_power)).dumpr_at_index(sym_i, piopexec.coeff_manager),
+                  side.b.dumpr_at_index(sym_i, piopexec.coeff_manager)),
               piopexec.reference_to_voexec.rust_vector_size),
           rust_vec_size(
               rust_zero(), piopexec.reference_to_voexec.rust_vector_size),
@@ -269,11 +270,11 @@ class PIOPFromVOProtocol(object):
     else:
       check_individual_hadamard.append(rust_check_expression_vector_eq_i(
           rust_mul(
-              (side1.a * (1/alpha_power)).dumpr_at_index(sym_i),
-              side1.b.dumpr_at_index(sym_i)),
+              (side1.a * (1/alpha_power)).dumpr_at_index(sym_i, piopexec.coeff_manager),
+              side1.b.dumpr_at_index(sym_i, piopexec.coeff_manager)),
           rust_neg(rust_mul(
-              (side2.a * (1/alpha_power)).dumpr_at_index(sym_i),
-              side2.b.dumpr_at_index(sym_i))),
+              (side2.a * (1/alpha_power)).dumpr_at_index(sym_i, piopexec.coeff_manager),
+              side2.b.dumpr_at_index(sym_i, piopexec.coeff_manager))),
           piopexec.reference_to_voexec.rust_vector_size,
           "The %d\'th hadamard check is not satisfied" % (i+1)
       )).end()
@@ -306,8 +307,7 @@ class PIOPFromVOProtocol(object):
     piopexec.prover_rust_define_expression_vector_i(
         r,
         rust_power_linear_combination(beta).append([
-            inner.dumpr_at_index(
-                sym_i)
+            inner.dumpr_at_index(sym_i, piopexec.coeff_manager)
             for i, inner in enumerate(voexec.inner_products)
         ]), rust_n)
 
@@ -363,7 +363,7 @@ class PIOPFromVOProtocol(object):
         t, rust_vector_concat(
             randomizer,
             rust_expression_vector_i(
-                extended_hadamard.dump_linear_combination_at_i(rust_n),
+                extended_hadamard.dump_linear_combination_at_i(rust_n, piopexec.coeff_manager),
                 2 * self.q + rust_max_shift)))
 
     tx = t.to_named_vector_poly()
@@ -451,21 +451,21 @@ class PIOPFromVOProtocol(object):
   def _increment_h_omega_sum(self, h_omega_sum_check, h_omega_sum, omega, a, b, size):
     h_omega_sum_check.append(h_omega_sum).plus_assign(
         rust_eval_vector_expression_i(omega,
-                                      rust_mul(a.dumpr_at_index(
-                                          sym_i), b.dumpr_at_index(sym_i)),
+                                      rust_mul(a.dumpr_at_index(sym_i, piopexec.coeff_manager),
+                                          b.dumpr_at_index(sym_i, piopexec.coeff_manager)),
                                       rust(size))
     ).end()
 
   def _increment_vec_sum(self, piopexec, vecsum, a, b):
     piopexec.prover_rust_add_expression_vector_to_vector_i(vecsum,
-                                                           rust_mul(a.dumpr_at_index(sym_i), b.dumpr_at_index(sym_i)))
+                                                           rust_mul(a.dumpr_at_index(sym_i, piopexec.coeff_manager), b.dumpr_at_index(sym_i, piopexec.coeff_manager)))
 
   def _increment_h_check_by_naive_atimesb(self, piopexec, hcheck_vec, a, b, size, omega):
     atimesb_vec_naive = get_named_vector("abnaive")
     piopexec.prover_rust_define_vector_poly_mul(
         atimesb_vec_naive,
-        rust_expression_vector_i(a.dumpr_at_index(sym_i), size),
-        rust_expression_vector_i(b.dumpr_at_index(sym_i), size),
+        rust_expression_vector_i(a.dumpr_at_index(sym_i, piopexec.coeff_manager), size),
+        rust_expression_vector_i(b.dumpr_at_index(sym_i, piopexec.coeff_manager), size),
         omega)
     piopexec.prover_rust_add_vector_to_vector(hcheck_vec, atimesb_vec_naive)
     return atimesb_vec_naive
@@ -480,7 +480,7 @@ class PIOPFromVOProtocol(object):
                                   (a.dumps(), b.dumps()))
     piopexec.prover_rust_define_expression_vector_i(atimesb_vec,
                                                     atimesb_vector_combination.dumpr_at_index(
-                                                        sym_i - size + 1),
+                                                        sym_i - size + 1, piopexec.coeff_manager),
                                                     2 * size - 1)
 
     return atimesb_vec
@@ -548,7 +548,7 @@ class PIOPFromVOProtocol(object):
           "sum of hadamards not zero")
       piopexec.prover_rust_define_expression_vector_i(
           h,
-          h_vec_combination.dumpr_at_index(sym_i - rust_h_inverse_degree + 1),
+          h_vec_combination.dumpr_at_index(sym_i - rust_h_inverse_degree + 1, piopexec.coeff_manager),
           rust_h_degree + rust_h_inverse_degree - 1)
       piopexec.prover_rust_check_vector_eq(h, hcheck_vec, "h is not expected")
 
@@ -563,11 +563,12 @@ class PIOPFromVOProtocol(object):
     piopexec.prover_rust_define_expression_vector_i(
         h1,
         h_vec_combination.dumpr_at_index(
-          sym_i - rust_h_inverse_degree + 1, collect_symbols=extended_hadamard.alpha),
+            sym_i - rust_h_inverse_degree + 1, piopexec.coeff_manager, collect_symbols=extended_hadamard.alpha),
         rust_h_inverse_degree - 1)
     piopexec.prover_rust_define_expression_vector_i(
         h2,
-        h_vec_combination.dumpr_at_index(sym_i + 1, collect_symbols=extended_hadamard.alpha),
+        h_vec_combination.dumpr_at_index(
+            sym_i + 1, piopexec.coeff_manager, collect_symbols=extended_hadamard.alpha),
         rust_h_degree - 1)
 
     if self.debug_mode:
@@ -576,7 +577,7 @@ class PIOPFromVOProtocol(object):
           rust_vector_concat(h1, rust_vec(rust_zero()), h2),
           "h != h1 || 0 || h2")
       piopexec.prover_rust_assert_eq(
-          h_vec_combination.dumpr_at_index(1), rust_zero())
+          h_vec_combination.dumpr_at_index(1, piopexec.coeff_manager), rust_zero())
 
     h1x = h1.to_named_vector_poly()
     h2x = h2.to_named_vector_poly()
@@ -618,7 +619,7 @@ class PIOPFromVOProtocol(object):
         rust_n + rust_max_shift + self.q)
 
   def _add_to_naive_g(self, piopexec, vec_or_value, coeff=None):
-    value = vec_or_value.dumpr_at_index(sym_i)
+    value = vec_or_value.dumpr_at_index(sym_i, piopexec.coeff_manager)
     value = value if coeff is None else rust_mul(value, coeff)
     piopexec.prover_rust_add_expression_vector_to_vector_i(
         piopexec.naive_g, value)
@@ -643,7 +644,7 @@ class PIOPFromVOProtocol(object):
       piopexec.prover_rust_assert_eq(
           multiplier,
           rust_eval_vector_expression_i(
-              z0, a.dumpr_at_index(sym_i),
+              z0, a.dumpr_at_index(sym_i, piopexec.coeff_manager),
               size))
 
     if multiplier == 0:
@@ -751,9 +752,16 @@ class PIOPFromVOProtocol(object):
     self.vo.execute(voexec, *args)
     piopexec.prover_inputs = voexec.prover_inputs
     piopexec.verifier_inputs = voexec.verifier_inputs
+    piopexec.coeff_manager = voexec.coeff_manager
 
     self.debug("Process interactions")
     self._process_interactions(piopexec, samples)
+
+    """
+    Must process the coefficient manager AFTER processing interactions,
+    because now the dependent variables in the hadamard queries are defined
+    """
+    piopexec.process_redefine_coeffs()
 
     self.debug("Prepare extended hadamard")
     extended_hadamard, max_shift, rust_max_shift = \

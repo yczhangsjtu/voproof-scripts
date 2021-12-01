@@ -525,6 +525,8 @@ class RustCodePrinterToField(RustCodePrinter):
             return "zero!()"
         if expr == 1:
             return "one!()"
+        if expr == -1:
+            return "neg!(one!())"
         ret = super()._print_Integer(expr, _type)
         return "scalar_to_field!(%s)" % ret
 

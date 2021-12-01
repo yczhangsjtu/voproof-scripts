@@ -1,6 +1,7 @@
 from .builder.latex import tex, Math, LaTeXBuilder
 from .builder.rust import *
 from .symbol.names import get_name
+from .symbol.coeff_manager import CoeffManager
 from sympy import Symbol
 
 
@@ -82,6 +83,18 @@ class PublicCoinProtocolExecution(object):
     self.indexer_output_vk = []
     self.interactions = []
     register_rust_functions(self)
+    self.coeff_manager = CoeffManager()
+
+  def redefine_coeff(self, expr):
+    if self.coeff_manager.has(expr):
+      return self.coeff_manager.get(expr)
+    sym = self.coeff_manager.set(expr)
+    self.process_redefine_coeffs()
+    return sym
+
+  def process_redefine_coeffs(self):
+    for sym, expr in self.coeff_manager.process_coeffs():
+      self.prover_computes_rust(rust_line_define(sym, expr), redefine_coeff=False)
 
   def input_instance(self, arg):
     self.verifier_inputs.append(arg)
@@ -112,7 +125,9 @@ class PublicCoinProtocolExecution(object):
   def prover_computes_latex(self, latex_builder):
     self.prover_computes(latex_builder, RustBuilder())
 
-  def prover_computes_rust(self, rust_builder):
+  def prover_computes_rust(self, rust_builder, redefine_coeff=True):
+    if redefine_coeff:
+      self.process_redefine_coeffs()
     self.prover_computes(LaTeXBuilder(), rust_builder)
 
   def prover_redefine_symbol_rust(self, s, name):

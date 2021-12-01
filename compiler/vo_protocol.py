@@ -1,6 +1,7 @@
 from .pc_protocol import PublicCoinProtocolExecution
 from .symbol.util import simplify_max_with_hints
 from .symbol.vector import NamedVector, VectorCombination, get_named_vector
+from .symbol.coeff_manager import CoeffManager
 from .builder.latex import tex, Itemize, add_paren_if_add, Math
 from .builder.rust import *
 from sympy import Integer, Max
@@ -65,10 +66,10 @@ class VOQuerySide(object):
   def __neg__(self):
     return VOQuerySide(-self.a, self.b)
 
-  def dumpr_at_index(self, index):
+  def dumpr_at_index(self, index, coeff_manager):
     return rust(rust_mul(
-        self.a.dumpr_at_index(index),
-        self.b.dumpr_at_index(index)))
+        self.a.dumpr_at_index(index, coeff_manager),
+        self.b.dumpr_at_index(index, coeff_manager)))
 
   def at_least_one_operand_is_structured(self):
     return (not isinstance(self.a, NamedVector) and
@@ -138,12 +139,12 @@ class VOQuery(object):
       return self.dump_left_side()
     return rust(rust_minus(self.dump_left_side(), self.dump_right_side()))
 
-  def dumpr_at_index(self, index):
+  def dumpr_at_index(self, index, coeff_manager):
     if self.one_sided:
-      return self.left_side.dumpr_at_index(index)
+      return self.left_side.dumpr_at_index(index, coeff_manager)
     return rust(rust_minus(
-        self.left_side.dumpr_at_index(index),
-        self.right_side.dumpr_at_index(index)))
+        self.left_side.dumpr_at_index(index, coeff_manager),
+        self.right_side.dumpr_at_index(index, coeff_manager)))
 
   def dump_hadamard_difference(self):
     tmp, self.oper = self.oper, "circ"
@@ -198,6 +199,7 @@ class VOProtocolExecution(PublicCoinProtocolExecution):
     self.inner_products = []
     self.vector_size_bound = Integer(0)
     self.vector_size_sum = Integer(0)
+    self.coeff_manager = CoeffManager()
     self._simplify_max_hints = None
 
   def simplify_max(self, expr):

@@ -479,6 +479,9 @@ def _dump_symbol_rust_at_index_for_sparse_coefficient(
   ret = Integer(0)
   for key, vec, value in v.key_keyed_coeffs():
     if key == "one":
+      """
+      The constant term is either structured vector or sparse vector
+      """
       ret += value._dump_symbol_rust_at_index(index, coeff_manager)
       continue
     for key2, unit_vector, coeff in value.key_keyed_coeffs():
@@ -1016,7 +1019,7 @@ class NamedVectorPairCombination(CoeffMap):
   def __rsub__(self, other):
     return self.__neg__().__add__(other)
 
-  def generate_vector_combination(self, omega):
+  def generate_vector_combination(self, omega, coeff_manager):
     named_vector_structure_pairs = []
     structured_vector_pair_combination = None
     ret = RustBuilder()
@@ -1078,15 +1081,18 @@ class NamedVectorPairCombination(CoeffMap):
 
     for v, p, s in named_power_sparse_tuples:
       vec = get_named_vector("v")
+      base = coeff_manager.add(p.alpha)
       ret.append(rust_define_vector_power_mul(
-          vec, rust_pk(v), rust(p.alpha, to_field=True), p.size
+          vec, rust_pk(v), rust(base, to_field=True), p.size
       )).end()
       vector_combination += vec * s
 
     for p1, p2, s in power_power_sparse_tuples:
       v = get_named_vector("v")
+      base1 = coeff_manager.add(p1.alpha)
+      base2 = coeff_manager.add(p2.alpha)
       ret.append(rust_define_power_power_mul(
-          v, rust(p1.alpha, to_field=True), p1.size, rust(p2.alpha, to_field=True), p2.size)
+          v, rust(base1, to_field=True), p1.size, rust(base2, to_field=True), p2.size)
       ).end()
       vector_combination += v * s
 

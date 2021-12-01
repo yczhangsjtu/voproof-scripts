@@ -5,7 +5,7 @@ So we replace each coefficient by a symbol, and maintain a dictionary for
 the map between symbols and coefficients
 """
 from .names import get_name
-from sympy import Symbol
+from sympy import Symbol, srepr
 from ..builder.latex import tex
 from ..builder.rust import rust
 
@@ -23,6 +23,15 @@ class CoeffManager(object):
   def add(self, expr):
     if expr == 1 or expr == 0 or expr == -1 or isinstance(expr, Symbol):
       return expr
+
+    if rust(expr).startswith("1"):
+      """
+      This is a hack. If the expression starts with one, but is not
+      a power, then it contains the field element "one", but unfortunately
+      use the integer to represent it. In this case, force this expression
+      into a string while transforming all the integers into field elements
+      """
+      expr = rust(expr, to_field=True)
 
     key = tex(expr)
     if key in self._dict:

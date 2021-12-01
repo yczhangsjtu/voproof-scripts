@@ -148,9 +148,9 @@ class ExtendedHadamard(object):
       hx_vector_combination += atimesb
     return hx_vector_combination
 
-  def generate_hx_vector_combination(self, omega):
+  def generate_hx_vector_combination(self, omega, coeff_manager):
     return self.generate_hx_vector_pair_combination(omega) \
-        .generate_vector_combination(omega)
+        .generate_vector_combination(omega, coeff_manager)
 
   def dump_hz_rust(self, z0, z, size, coeff_manager):
     lc = rust_linear_combination_base_zero()
@@ -472,7 +472,7 @@ class PIOPFromVOProtocol(object):
 
   def _computes_atimesb_vec(self, piopexec, atimesb, omega, a, b, size):
     atimesb_computes_rust, atimesb_vector_combination = \
-        atimesb.generate_vector_combination(omega)
+        atimesb.generate_vector_combination(omega, piopexec.coeff_manager)
     piopexec.prover_computes_rust(atimesb_computes_rust)
 
     atimesb_vec = get_named_vector("atimesb")
@@ -528,7 +528,8 @@ class PIOPFromVOProtocol(object):
 
     h = get_named_vector("h")
     hxcomputes_rust, h_vec_combination = \
-        extended_hadamard.generate_hx_vector_combination(omega)
+        extended_hadamard.generate_hx_vector_combination(omega, piopexec.coeff_manager)
+    piopexec.process_redefine_coeffs()
     piopexec.prover_computes(
         LaTeXBuilder()
         .start_math().append(hx).assign().end_math().space("the sum of:").eol()

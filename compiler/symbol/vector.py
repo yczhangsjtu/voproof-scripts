@@ -1022,6 +1022,7 @@ class NamedVectorPairCombination(CoeffMap):
   def generate_vector_combination(self, omega, coeff_manager):
     named_vector_structure_pairs = []
     structured_vector_pair_combination = None
+    visited_vector_names = set()
     ret = RustBuilder()
     for key, vector_pair, coeff in self.key_keyed_coeffs():
       if key == "one":
@@ -1029,6 +1030,12 @@ class NamedVectorPairCombination(CoeffMap):
       elif vector_pair.u is not None and vector_pair.v is not None:
         v = get_named_vector("v")
         to_shift = Symbol(get_name("shiftlength"))
+        if rust_pk(vector_pair.u) not in visited_vector_names:
+          ret.append(rust_define_vector_domain_evaluations_dict(rust_pk(vector_pair.u))).end()
+          visited_vector_names.add(rust_pk(vector_pair.u))
+        if rust_pk(vector_pair.v) not in visited_vector_names:
+          ret.append(rust_define_vector_domain_evaluations_dict(rust_pk(vector_pair.v))).end()
+          visited_vector_names.add(rust_pk(vector_pair.v))
         ret.append(rust_define_vector_poly_mul_shift(
             v, rust_pk(vector_pair.u), rust_pk(vector_pair.v), omega, to_shift
         )).end()

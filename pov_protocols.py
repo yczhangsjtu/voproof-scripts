@@ -40,8 +40,8 @@ class ProductEq(VOProtocol):
         named_u, named_v, ell)))
     voexec.prover_rust_define_accumulate_vector_mul(
         r,
-        rust_mul(u.dumpr_at_index(sym_i),
-                 rust_inverse(v.dumpr_at_index(sym_i))),
+        rust_mul(u.dumpr_at_index(sym_i, voexec.coeff_manager),
+                 rust_inverse(v.dumpr_at_index(sym_i, voexec.coeff_manager))),
         ell)
 
     voexec.prover_submit_vector(r, ell)

@@ -272,5 +272,5 @@ if __name__ == '__main__':
   # analyzeHPRProverEfficient()
   # analyzePOVProverEfficient()
   analyzeR1CS()
-  # analyzeHPR()
-  # analyzePOV()
+  analyzeHPR()
+  analyzePOV()

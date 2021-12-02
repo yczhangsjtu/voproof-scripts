@@ -375,11 +375,24 @@ rust_macro_list = [
     ("accumulate_vector_mul", None, ("v"), ()),
     ("define_accumulate_vector_mul", None, ("name", "v", "n"), (
         _ArgName("name"), sym_i, _ArgName("v"), _ArgName("n"))),
-    ("vector_poly_mul", None, ("u", "v", "omega"), ()),
+    ("vector_poly_mul", None, ("u", "v", "omega"), (
+        _ArgName("u"), _ArgName("v"), _ArgName("omega"),
+        _ArgProcess(
+            lambda vec: f"_{rust(vec)}_left_eval_dict".replace(".", "_"), "u"),
+        _ArgProcess(
+            lambda vec: f"_{rust(vec)}_right_eval_dict".replace(".", "_"), "v"),
+    )),
     ("define_vector_poly_mul", None, ("name", "u", "v", "omega"), ()),
     ("define_shift_minus_one", None, ("name", "vec"), ()),
     ("define_vector_poly_mul_shift", None,
-     ("name", "u", "v", "omega", "shiftname"), ()),
+     ("name", "u", "v", "omega", "shiftname"), (
+         _ArgName("name"), _ArgName("u"), _ArgName("v"),
+         _ArgName("omega"), _ArgName("shiftname"),
+         _ArgProcess(
+             lambda vec: f"_{rust(vec)}_left_eval_dict".replace(".", "_"), "u"),
+         _ArgProcess(
+             lambda vec: f"_{rust(vec)}_right_eval_dict".replace(".", "_"), "v"),
+     )),
     ("define_vector_reverse_omega_shift", None,
      ("name", "v", "omega", "shiftname"), ()),
     ("define_vector_power_mul", None, ("name", "v", "alpha", "n"), ()),
@@ -388,6 +401,9 @@ rust_macro_list = [
     ("define_commitment_linear_combination_no_one", None, None, ()),
     ("add_to_first_item", None, ("v", "e"), ()),
     ("range_index", None, ("start", "end", "i"), ()),
+    ("define_vector_domain_evaluations_dict", None, ("vec",),
+        (_ArgProcess(lambda vec: f"_{rust(vec)}_left_eval_dict".replace(".", "_"), "vec"),
+         _ArgProcess(lambda vec: f"_{rust(vec)}_right_eval_dict".replace(".", "_"), "vec"))),
 ]
 
 

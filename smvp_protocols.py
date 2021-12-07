@@ -65,6 +65,7 @@ class SparseMVP(VOProtocol):
     voexec.verifier_rust_define_generator()
     voexec.verifier_send_randomness(mu)
     r = get_named_vector("r")
+    r._do_not_randomize = True # r depends only on the random number
     voexec.prover_computes(
         Math(r).assign(ExpressionVector(
             "\\frac{1}{%s-\\gamma^i}" % tex(mu), H)),
@@ -73,11 +74,13 @@ class SparseMVP(VOProtocol):
             rust_minus(mu, PowerVector(gamma, H).dumpr_at_index(sym_i, voexec.coeff_manager)),
             H))
     c = get_named_vector("c")
+    c._do_not_randomize = True # c depends only on the random number and public matrix
     voexec.prover_computes(Math(c).assign()
                            .transpose(r, paren=False).append("\\boldsymbol{M}"),
                            rust_line_define_left_sparse_mvp_vector(
         c, rust_pk(M), r, H, K))
     s = get_named_vector("s")
+    s._do_not_randomize = True # s depends only on r and c
     voexec.prover_computes(
         Math(s).assign(r).double_bar().paren(-c),
         rust_line_define_concat_neg_vector(s, r, c))
@@ -96,7 +99,9 @@ class SparseMVP(VOProtocol):
     voexec.verifier_send_randomness(nu)
 
     h = get_named_vector("h")
+    h._do_not_randomize = True # h depends only on random numbers
     rnu = get_named_vector("rnu")
+    rnu._do_not_randomize = True # r_nu depends only on random numbers
     voexec.prover_rust_define_expression_vector_inverse_i(
         rnu,
         rust_minus(nu, PowerVector(gamma, K).dumpr_at_index(sym_i, voexec.coeff_manager)),

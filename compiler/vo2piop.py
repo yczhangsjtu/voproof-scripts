@@ -203,16 +203,23 @@ class PIOPFromVOProtocol(object):
 
   def _process_prover_submitted_vector(self, piopexec, v, size, rust_size, samples):
     rust_n = piopexec.reference_to_voexec.rust_vector_size
-    # Sample the randomizer
-    randomizer = self._generate_new_randomizer(samples, 1)
     poly = v.to_named_vector_poly()
-    # Zero pad the vector to size n then append the randomizer
-    piopexec.prover_computes(
-        Math(randomizer).sample(self.Ftoq).comma(
-            Math(v)).assign(v).double_bar(randomizer),
-        rust_line_redefine_zero_pad_concat_vector(v, rust_n, randomizer))
-    piopexec.prover_send_polynomial(
-        poly, self.vector_size + self.q, rust_n + self.q)
+
+    # Sample the randomizer
+    if not v._do_not_randomize:
+      randomizer = self._generate_new_randomizer(samples, 1)
+
+      # Zero pad the vector to size n then append the randomizer
+      piopexec.prover_computes(
+          Math(randomizer).sample(self.Ftoq).comma(
+              Math(v)).assign(v).double_bar(randomizer),
+          rust_line_redefine_zero_pad_concat_vector(v, rust_n, randomizer))
+
+      piopexec.prover_send_polynomial(
+          poly, self.vector_size + self.q, rust_n + self.q)
+    else:
+      piopexec.prover_send_polynomial(poly, size, rust_size)
+
     # piopexec.prover_rust_define_poly_from_vec(poly, v)
     piopexec.vec_to_poly_dict[v.key()] = poly
 
@@ -332,11 +339,11 @@ class PIOPFromVOProtocol(object):
     piopexec.vec_to_poly_dict[rtilde.key()] = fr
 
     extended_hadamard.clear_beta()
-    extended_hadamard.add_side(-VOQuerySide(rtilde - rtilde.shift(1),
-                                            PowerVector(1, n, rust_n)))
+    extended_hadamard.add_side(-VOQuerySide(PowerVector(1, n, rust_n),
+                                            rtilde - rtilde.shift(1)))
     extended_hadamard.end_adding_sides()
 
-    extended_hadamard.add_side(VOQuerySide(rtilde, UnitVector(n, rust_n)))
+    extended_hadamard.add_side(VOQuerySide(UnitVector(n, rust_n), rtilde))
 
     # This last hadamard check involves only a named vector times
     # a unit vector, it does not contributes to t

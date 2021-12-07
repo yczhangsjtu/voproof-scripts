@@ -17,6 +17,7 @@ class NamedVector(_NamedBasic):
     self._is_preprocessed = False
     self._do_not_count_shifts = False
     self._rust_to_bytes_replacement = None
+    self._do_not_randomize = False
 
   def slice(self, start, end=None):
     return VectorSlice(self, start, end)

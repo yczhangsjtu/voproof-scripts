@@ -5,7 +5,7 @@ So we replace each coefficient by a symbol, and maintain a dictionary for
 the map between symbols and coefficients
 """
 from .names import get_name
-from sympy import Symbol, srepr
+from sympy import Symbol, srepr, sympify, simplify
 from ..builder.latex import tex
 from ..builder.rust import rust
 
@@ -21,6 +21,7 @@ class CoeffManager(object):
     self._to_be_processed = []
 
   def add(self, expr):
+    expr = simplify(sympify(expr))
     if expr == 1 or expr == 0 or expr == -1 or isinstance(expr, Symbol):
       return expr
 

@@ -140,7 +140,7 @@ class CombinePolynomial(object):
     else:
       computes.commit_rust_items.append(
           rust_line_define_commitment_linear_combination_no_one(
-              self.poly.to_comm(), "vk", *commit_sum_rust_items))
+              self.poly.to_comm(), *commit_sum_rust_items))
 
     computes.oracle_items.append(
         Math("[%s]" % self.poly.dumps()).assign("+".join(oracle_sum_items)))

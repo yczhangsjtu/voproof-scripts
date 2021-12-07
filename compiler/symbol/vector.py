@@ -19,6 +19,11 @@ class NamedVector(_NamedBasic):
     self._rust_to_bytes_replacement = None
     self._do_not_randomize = False
 
+  def key(self):
+    if self._is_preprocessed:
+      return "%s:pk" % super().key()
+    return super().key()
+
   def slice(self, start, end=None):
     return VectorSlice(self, start, end)
 
@@ -416,6 +421,8 @@ def _dumpr_at_index_for_sparse_coefficient(v, index, coeff_manager):
       return rust(ret[0])
     if ret[1] == to_field(-1):
       return rust(rust_neg(ret[0]))
+    if ret[0] == 0 or rust[1] == 0 or ret[0] == to_field(0) or ret[1] == to_field(0):
+      return to_field(0)
     return rust(rust_mul(ret[0], ret[1]))
 
   return rust(ret)
@@ -660,9 +667,13 @@ class PowerVector(object):
                                    rust_length + 1 if rust_length is not None else None))
 
   def to_poly_expr(self, var):
+    if self.size == 0:
+      return 0
     return ((self.alpha * var) ** self.size - Symbol("one!()")) / (self.alpha * var - Symbol("one!()"))
 
   def to_poly_expr_rust(self, var):
+    if self.size == 0 or self.rust_size == 0:
+      return 0
     return ((self.alpha * var) ** self.rust_size - Symbol("one!()")) / (self.alpha * var - Symbol("one!()"))
 
   def dumpr_at_index(self, index, coeff_manager):
@@ -677,6 +688,8 @@ class PowerVector(object):
       base = coeff_manager.add(self.alpha)
       return rust(RustMacro("power_vector_index").append([
           rust(base, to_field=True), self.rust_size, index]))
+    elif self.size == 0 or self.rust_size == 0:
+      return rust(rust_zero())
     else:
       return rust(rust_range_index(1, self.rust_size, index))
 

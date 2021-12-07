@@ -331,7 +331,7 @@ class ZKSNARKFromPIOPExecKZG(ZKSNARK):
       points_poly_dict[key].append(query)
     return points_poly_dict
 
-  def _parepare_for_kzg_open(self, points_poly_dict, transcript):
+  def _parepare_for_kzg_open(self, piopexec, points_poly_dict, transcript):
     kzginfo = KZGInfo()
     for key, queries in points_poly_dict.items():
       point = queries[0].point
@@ -359,6 +359,9 @@ class ZKSNARKFromPIOPExecKZG(ZKSNARK):
     if piopexec.debug_mode:
       z = [query.point for query in piopexec.eval_checks if query.name == 0][0]
       naive_g = piopexec.naive_g
+      # Note that naive_g is not the same as g, because naive_g does not decompose
+      # the vector combination and replace all the coefficients with their evaluation
+      # at z. But naive_g should evaluate to zero
       self.prover_rust_define_poly_from_vec(
           naive_g.to_named_vector_poly(), naive_g)
       self.prover_rust_check_poly_eval(
@@ -370,7 +373,7 @@ class ZKSNARKFromPIOPExecKZG(ZKSNARK):
   def _generate_open_and_verify_computations(self, piopexec):
     points_poly_dict = self._generate_points_poly_dict(
         piopexec.eval_queries + piopexec.eval_checks)
-    kzginfo = self._parepare_for_kzg_open(points_poly_dict, self.transcript)
+    kzginfo = self._parepare_for_kzg_open(piopexec, points_poly_dict, self.transcript)
 
     self.proof += [p.proof_symbol for p in kzginfo.points_info]
     open_computation, verify_computation = \

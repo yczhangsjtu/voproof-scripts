@@ -371,6 +371,8 @@ rust_macro_list = [
     ("define_concat_neg_vector", None, ("name", "u", "v"), ()),
     ("define_concat_uwinverse_vector", None,
      ("name", "v", "mu", "u", "nu", "w"), ()),
+    ("define_uwinverse_vector", None,
+     ("name", "mu", "u", "nu", "w"), ()),
     ("accumulate_vector_plus", None, ("v"), ()),
     ("accumulate_vector_mul", None, ("v"), ()),
     ("define_accumulate_vector_mul", None, ("name", "v", "n"), (
@@ -382,6 +384,7 @@ rust_macro_list = [
         _ArgProcess(
             lambda vec: f"_{rust(vec)}_right_eval_dict".replace(".", "_"), "v"),
     )),
+    ("define_vector_poly_mul_no_dict", None, ("name", "u", "v", "omega"), ()),
     ("define_vector_poly_mul", None, ("name", "u", "v", "omega"), ()),
     ("define_shift_minus_one", None, ("name", "vec"), ()),
     ("define_vector_poly_mul_shift", None,

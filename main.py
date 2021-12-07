@@ -64,13 +64,14 @@ def get_minimal_vector_size(protocol, ppargs, execargs, simplify_hints):
 
 def analyzeProtocol(protocol, ppargs, execargs, simplify_hints, size_map, set_parameters,
                     filename=None):
-  name = protocol.__class__.__name__
+  name = protocol.name
   n = get_minimal_vector_size(protocol, ppargs, execargs, simplify_hints)
   set_parameters()
 
   debug("Start analyzing %s..." % name)
   piop = PIOPFromVOProtocol(protocol, n, D)
   piop.debug_mode = debug_mode
+  piop.debug_check_hadamard_side = debug_check_hadamard_side
   debug("Start preprocessing...")
   piopexec = PIOPExecution()
 
@@ -83,7 +84,7 @@ def analyzeProtocol(protocol, ppargs, execargs, simplify_hints, size_map, set_pa
 
   size_init = rust(piopexec.max_degree)
   for size, value in size_map:
-    size_init = size_init.replace(rust(size), "size.{}".format(value))
+    size_init = size_init.replace(rust(size), "(size.{} as i64)".format(value))
 
   debug("Start compiling to zkSNARK...")
   zkSNARK = ZKSNARKFromPIOPExecKZG(piopexec)
@@ -136,13 +137,18 @@ def set_r1cs_parameters():
 
 def analyzeR1CS():
   H, K, Sa, Sb, Sc, ell = set_r1cs_parameters()
-  hints = [(H, K), (Sa, K + 1), (Sa, H + 1), (Sb, K + 1), (Sb, H + 1), (Sc, K + 1), (Sc, H + 1),
-           (Sa + Sb + Sc, 3 * K + 3), (Sa + Sb + Sc, 3 * H + 3)]
+  hints = [(H, K), (Sa, K + 1), (Sa, H + 1),
+           (Sb, K + 1), (Sb, H + 1),
+           (Sc, K + 1), (Sc, H + 1),
+           (Sa + Sb + Sc, 3 * K + 3),
+           (Sa + Sb + Sc, 3 * H + 3),
+           (Sa + Sb + Sc + K, 4 * H + 3)]
   size_map = [(H, "nrows"), (K, "ncols"),
               (Sa, "adensity"), (Sb, "bdensity"), (Sc, "cdensity"),
               (ell, "input_size")]
   x = get_named_vector("x")
   x.local_evaluate = True
+  x._do_not_count_shifts = True
   x.hint_computation = lambda z: RustMacro("eval_vector_expression").append([
       z, Symbol("i"), x.dumpr_at_index(Symbol("i"), None), ell
   ])
@@ -152,24 +158,28 @@ def analyzeR1CS():
                   filename="voproof_r1cs")
 
 
-def set_r1cs_prover_efficient_parameters():
-  H = Symbol(get_name("H"), positive=True)
-  K = Symbol(get_name("K"), positive=True)
-  S = Symbol(get_name("S"), positive=True)
-  ell = Symbol(get_name("ell"), positive=True)
-  return H, K, S, ell
-
-
 def analyzeR1CSProverEfficient():
-  H, K, S, ell = set_r1cs_prover_efficient_parameters()
-  hints = [(S, H + 1), (S, K + 1), (H, K)]
-  size_map = [(H, "nrows"), (K, "ncols"), (S, "density")]
+  H, K, Sa, Sb, Sc, ell = set_r1cs_parameters()
+  hints = [(H, K), (Sa, K + 1), (Sa, H + 1),
+           (Sb, K + 1), (Sb, H + 1),
+           (Sc, K + 1), (Sc, H + 1),
+           (Sa + Sb + Sc, 3 * K + 3),
+           (Sa + Sb + Sc, 3 * H + 3),
+           (Sa + Sb + Sc + K, 4 * H + 3)]
+  size_map = [(H, "nrows"), (K, "ncols"),
+              (Sa, "adensity"), (Sb, "bdensity"), (Sc, "cdensity"),
+              (ell, "input_size")]
   x = get_named_vector("x")
   x.local_evaluate = True
-  ppargs = (H, K, S*3)
+  x._do_not_count_shifts = True
+  x.hint_computation = lambda z: RustMacro("eval_vector_expression").append([
+      z, Symbol("i"), x.dumpr_at_index(Symbol("i"), None), ell
+  ])
+  ppargs = (H, K, Sa, Sb, Sc)
   execargs = (x, get_named_vector("w"), ell)
-  analyzeProtocol(R1CSProverEfficient(), ppargs, execargs, hints, size_map,
-                  set_r1cs_prover_efficient_parameters)
+  analyzeProtocol(R1CSProverEfficient(), ppargs, execargs,
+                  hints, size_map, set_r1cs_parameters,
+                  filename="voproof_r1cs")
 
 
 def set_hpr_parameters():
@@ -258,6 +268,7 @@ def analyzePOVProverEfficient():
 
 
 debug_mode = False
+debug_check_hadamard_side = False
 
 
 def debug(info=""):
@@ -268,9 +279,9 @@ def debug(info=""):
 if __name__ == '__main__':
   if "debug" in sys.argv:
     debug_mode = True
-  # analyzeR1CSProverEfficient()
+  analyzeR1CSProverEfficient()
   # analyzeHPRProverEfficient()
   # analyzePOVProverEfficient()
-  analyzeR1CS()
-  analyzeHPR()
-  analyzePOV()
+  # analyzeR1CS()
+  # analyzeHPR()
+  # analyzePOV()

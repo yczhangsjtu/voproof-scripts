@@ -141,9 +141,13 @@ class UnitVector(object):
     return []
 
   def to_poly_expr(self, var):
+    if self.position == 1:
+      return Symbol(rust(rust_one()))
     return var ** (self.position - 1)
 
   def to_poly_expr_rust(self, var):
+    if self.position == 1:
+      return Symbol(rust(rust_one()))
     return var ** (self.rust_position - 1)
 
   def __add__(self, other):

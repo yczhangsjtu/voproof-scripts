@@ -150,7 +150,7 @@ class SparseMVP(VOProtocol):
 
 class SparseMVPProverEfficient(VOProtocol):
   def __init__(self):
-    super(SparseMVP, self).__init__("SparseMVPProverEfficient")
+    super().__init__("SparseMVPProverEfficient")
 
   def preprocess(self, voexec, H, K, ell):
     n = voexec.vector_size
@@ -256,7 +256,7 @@ class SparseMVPProverEfficient(VOProtocol):
         PowerVector(1, K),
         PowerVector(1, K),
     )
-
+#
     voexec.hadamard_query(
         PowerVector(1, n-H, rust_n-H).shift(H),
         rmu,
@@ -287,7 +287,7 @@ class SparseMVPProverEfficient(VOProtocol):
     )
 
     voexec.inner_product_query(c, rnu, t, voexec.v)
-
+#
 
 class R1CS(VOProtocol):
   def __init__(self):
@@ -425,9 +425,10 @@ class R1CSProverEfficient(VOProtocol):
 
     voexec.prover_submit_vector(y, 3 * H)
     voexec.prover_submit_vector(w, K - ell - 1)
-    voexec.run_subprotocol(SparseMVP(),
-                           y + UnitVector(H * 3 + 1) +
-                           x.shift(H * 3 + 1) + w.shift(H * 3 + ell + 1))
+    voexec.run_subprotocol(SparseMVPProverEfficient(),
+                           UnitVector(1) +
+                           x.shift(1) + w.shift(ell + 1),
+                           y)
     voexec.hadamard_query(PowerVector(1, n-H*3, rust_n-H*3).shift(H*3), y)
     voexec.hadamard_query(y.shift(H*2), y,
                           PowerVector(1, H).shift(H*2), y.shift(H))

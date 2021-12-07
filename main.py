@@ -142,7 +142,8 @@ def analyzeR1CS():
            (Sc, K + 1), (Sc, H + 1),
            (Sa + Sb + Sc, 3 * K + 3),
            (Sa + Sb + Sc, 3 * H + 3),
-           (Sa + Sb + Sc + K, 4 * H + 3)]
+           (Sa + Sb + Sc + K, 4 * H + 3),
+           (H, ell + 1)]
   size_map = [(H, "nrows"), (K, "ncols"),
               (Sa, "adensity"), (Sb, "bdensity"), (Sc, "cdensity"),
               (ell, "input_size")]
@@ -165,7 +166,8 @@ def analyzeR1CSProverEfficient():
            (Sc, K + 1), (Sc, H + 1),
            (Sa + Sb + Sc, 3 * K + 3),
            (Sa + Sb + Sc, 3 * H + 3),
-           (Sa + Sb + Sc + K, 4 * H + 3)]
+           (Sa + Sb + Sc + K, 4 * H + 3),
+           (H, ell + 1)]
   size_map = [(H, "nrows"), (K, "ncols"),
               (Sa, "adensity"), (Sb, "bdensity"), (Sc, "cdensity"),
               (ell, "input_size")]
@@ -268,7 +270,7 @@ def analyzePOVProverEfficient():
 
 
 debug_mode = False
-debug_check_hadamard_side = False
+debug_check_hadamard_side = True
 
 
 def debug(info=""):

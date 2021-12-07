@@ -32,7 +32,7 @@ for line in lines:
   match = re.match(r"·*End:\s*([^\.]+\S) \.+([\d\.]+)(m|µ|n)?s", line)
   if match is not None:
     name = match.group(1)
-    var_match = re.match(r"(.*) of (size|degree).*", name)
+    var_match = re.match(r"(.*) of (size|degree|density).*", name)
     if var_match is not None:
       name = var_match.group(1)
 

@@ -64,7 +64,8 @@ def get_minimal_vector_size(protocol, ppargs, execargs, simplify_hints):
 
 def analyzeProtocol(protocol, ppargs, execargs, simplify_hints, size_map, set_parameters,
                     filename=None):
-  name = protocol.name
+  name = protocol.__class__.__name__
+  csname = protocol.name
   n = get_minimal_vector_size(protocol, ppargs, execargs, simplify_hints)
   set_parameters()
 
@@ -95,6 +96,7 @@ def analyzeProtocol(protocol, ppargs, execargs, simplify_hints, size_map, set_pa
     with open("../voproof/src/snarks/template.rs") as template:
       temp = template.readlines()
     mark_content_map = [("__NAME__", name),
+                        ("__CSNAME__", csname),
                         ("/*{size}*/",
                          "(%s) as usize" % size_init),
                         ("/*{VerifierKey}*/", zkSNARK.dump_vk_definition()),
@@ -181,7 +183,7 @@ def analyzeR1CSProverEfficient():
   execargs = (x, get_named_vector("w"), ell)
   analyzeProtocol(R1CSProverEfficient(), ppargs, execargs,
                   hints, size_map, set_r1cs_parameters,
-                  filename="voproof_r1cs")
+                  filename="voproof_r1cs_prover_efficient")
 
 
 def set_hpr_parameters():
@@ -284,6 +286,6 @@ if __name__ == '__main__':
   analyzeR1CSProverEfficient()
   # analyzeHPRProverEfficient()
   # analyzePOVProverEfficient()
-  # analyzeR1CS()
+  analyzeR1CS()
   # analyzeHPR()
   # analyzePOV()

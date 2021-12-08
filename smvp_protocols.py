@@ -150,7 +150,7 @@ class SparseMVP(VOProtocol):
 
 class SparseMVPProverEfficient(VOProtocol):
   def __init__(self):
-    super().__init__("SparseMVPProverEfficient")
+    super().__init__("SparseMVP")
 
   def preprocess(self, voexec, H, K, ell):
     n = voexec.vector_size

@@ -161,19 +161,23 @@ class TripleCopyCheck(VOProtocol):
     super(TripleCopyCheck, self).__init__("CopyCheck")
 
   def preprocess(self, voexec, ell):
+    vsigma = get_named_vector("sigma")
     vsigma1 = get_named_vector("sigma")
     vsigma2 = get_named_vector("sigma")
     vsigma3 = get_named_vector("sigma")
-    voexec.preprocess(Math(vsigma1).assign(
+    voexec.preprocess_latex(Math(vsigma1).assign(
         ExpressionVector(gamma ** (Symbol("\\sigma(i)")-1), ell)
     ))
-    voexec.preprocess(Math(vsigma2).assign(
+    voexec.preprocess_latex(Math(vsigma2).assign(
         ExpressionVector(gamma ** (Symbol("\\sigma(i+%s)" % tex(ell))-1), ell)
     ))
-    voexec.preprocess(Math(vsigma3).assign(
+    voexec.preprocess_latex(Math(vsigma3).assign(
         ExpressionVector(
             gamma ** (Symbol("\\sigma(i+%s)" % tex(2*ell))-1), ell)
     ))
+    voexec.pp_rust_define_generator()
+    voexec.pp_rust_define_permutation_vector_from_wires(
+        vsigma, "cs.wires", ell)
     voexec.preprocess_vector(vsigma1, ell)
     voexec.preprocess_vector(vsigma2, ell)
     voexec.preprocess_vector(vsigma3, ell)
@@ -278,9 +282,9 @@ class POV(VOProtocol):
     voexec.run_subprotocol(CopyCheck(), w)
 
 
-class POVProverEfficient(VOProtocol):
+class POVTotalSplit(VOProtocol):
   def __init__(self):
-    super(POVProverEfficient, self).__init__("POVProverEfficient")
+    super(POVTotalSplit, self).__init__("POVProverEfficient")
 
   def preprocess(self, voexec, d, Cc, Ca, Cm):
     C = Cc + Ca + Cm
@@ -351,3 +355,81 @@ class POVProverEfficient(VOProtocol):
     voexec.hadamard_query(t3, cp.shift(Cc) - x3 + d)
     voexec.run_subprotocol(TripleCopyCheck(), ap.shift(
         Cc), (bm+bp).shift(Cc), cp.shift(Cc) + d)
+
+
+class POVProverEfficient(VOProtocol):
+  def __init__(self):
+    super(POVProverEfficient, self).__init__("POV")
+
+  def preprocess(self, voexec, d, Cc, Ca, Cm):
+    C = Cc + Ca + Cm
+    voexec.pp_rust_init_size(Ca, "nadd")
+    voexec.pp_rust_init_size(Cm, "nmul")
+    voexec.pp_rust_init_size(C, "n")
+
+    CopyCheck().preprocess(voexec, 3 * C)
+
+    voexec.pp_rust_define(d, "cs.consts.clone()")
+    voexec.preprocess_vector(d, Cc)
+    voexec.preprocess_output_pk(d)
+    voexec.Ca = Ca
+    voexec.Cm = Cm
+    voexec.Cc = Cc
+    voexec.C = C
+    voexec.d = d
+
+    """
+    The vector d will never be shifted outside the n-window
+    """
+    d._do_not_count_shifts = True
+
+  def execute(self, voexec, x, a, b, c):
+    voexec.input_instance(x)
+    voexec.input_witness(a)
+    voexec.input_witness(b)
+    voexec.input_witness(c)
+
+    C, Cc, Ca, Cm, d, n = \
+        voexec.C, voexec.Cc, voexec.Ca, voexec.Cm, voexec.d, voexec.vector_size
+    voexec.verifier_rust_init_size(Ca, "nadd")
+    voexec.verifier_rust_init_size(Cm, "nmul")
+    voexec.verifier_rust_init_size(C, "n")
+
+    voexec.prover_rust_define_sparse_vector(
+        x, "x.instance.0", "x.instance.1", 3 * C)
+    voexec.prover_rust_define_vec(a, "w.witness.0.clone()")
+    voexec.prover_rust_define_vec(b, "w.witness.1.clone()")
+    voexec.prover_rust_define_vec(c, "w.witness.2.clone()")
+    voexec.try_verifier_redefine_vector_size_rust("n", n)
+    rust_n = voexec.rust_vector_size
+    #  voexec.prover_rust_define(voexec.d, rust_pk(voexec.d))
+
+    u = get_named_vector("u")
+    v = get_named_vector("v")
+    voexec.prover_rust_define_concat_subvec(u, a, 0, C, b, 0, Cm)
+    voexec.prover_rust_define_concat_subvec(v, b, Cm, C, c, 0, Cm+Ca)
+
+    voexec.prover_submit_vector(u, C)
+    voexec.prover_submit_vector(v, C)
+
+    t = get_named_vector("t")
+    t.local_evaluate = True
+    t.hint_computation = lambda z: RustMacro(
+        "eval_sparse_zero_one_vector").append([z, "x.instance.0"])
+    voexec.verifier_computes_latex(
+        Math(t).assign("\\sum_{i\\in\\cI_x}%s"
+                       % UnitVector(Symbol("i")).dumps()))
+    voexec.prover_rust_define_sparse_zero_one_vector(t, "x.instance.0", 3 * C)
+
+    voexec.hadamard_query(
+        u.shift(C),
+        u,
+        PowerVector(1, Cm).shift(C),
+        v.shift(Cm)
+    )
+    voexec.hadamard_query(
+        PowerVector(1, Ca).shift(C),
+        u.shift(Ca+Cc) + v.shift(C) - v
+    )
+    voexec.hadamard_query(t, u + v.shift(C+Cm) - x)
+    voexec.run_subprotocol(CopyCheck(), u + v.shift(C+Cm) + d.shift(3*C-Cc))

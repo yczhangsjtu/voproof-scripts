@@ -260,15 +260,19 @@ def analyzePOVProverEfficient():
   C, Ca, Cm, Cc = set_pov_parameters()
 
   hints = [(C, Ca + Cm + 1), (C, 1), (Ca, 1), (Cm, 1)]
-  size_map = [(C, "nconsts + size.nadd + size.nmul"),
-              (Ca, "nadd"), (Cm, "nmul"), (Cc, "nconsts")]
+  size_map = [(Ca, "nadd"), (Cm, "nmul"), (Cc, "nconsts"), (C, "n")]
   x = get_named_vector("x")
   x.local_evaluate = True
-  ppargs = (get_named_vector("d"), C - Ca - Cm, Ca, Cm)
+  x.hint_computation = lambda z: RustMacro(
+      "eval_sparse_vector").append([z, "x.instance.0", "x.instance.1"])
+  x._rust_to_bytes_replacement = "x.instance.0, x.instance.1"
+  d = get_named_vector("d")
+  d._is_preprocessed = True
+  ppargs = (d, C - Ca - Cm, Ca, Cm)
   execargs = (x, get_named_vector("a"),
               get_named_vector("b"), get_named_vector("c"))
   analyzeProtocol(POVProverEfficient(), ppargs, execargs,
-                  hints, size_map, set_pov_parameters)
+                  hints, size_map, set_pov_parameters, filename="voproof_pov_prover_efficient")
 
 
 debug_mode = False
@@ -283,9 +287,9 @@ def debug(info=""):
 if __name__ == '__main__':
   if "debug" in sys.argv:
     debug_mode = True
-  analyzeR1CSProverEfficient()
-  # analyzeHPRProverEfficient()
-  # analyzePOVProverEfficient()
-  analyzeR1CS()
-  # analyzeHPR()
-  # analyzePOV()
+  #  analyzeR1CSProverEfficient()
+  #  analyzeHPRProverEfficient()
+  analyzePOVProverEfficient()
+  #  analyzeR1CS()
+  #  analyzeHPR()
+  #  analyzePOV()

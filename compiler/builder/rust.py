@@ -290,6 +290,7 @@ rust_macro_list = [
     ("vector_concat", None, None, ()),
     ("vector_concat_skip", None, None, ()),
     ("concat_and_one", None, ("u", "v"), ()),
+    ("define_concat_subvec", None, ("u", "a", "ai", "aj", "b", "bi", "bj"), ()),
     ("check_vector_eq", None, ("v", "expr", "info"),
      (_ArgName("v"), _ArgName("expr"), _ArgProcess(lambda info: '"%s"' % info, "info"))),
     ("check_expression_vector_eq", "check_expression_vector_eq_i", ("u", "v", "len", "info"),

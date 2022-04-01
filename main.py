@@ -183,7 +183,7 @@ def analyzeR1CSProverEfficient():
   execargs = (x, get_named_vector("w"), ell)
   analyzeProtocol(R1CSProverEfficient(), ppargs, execargs,
                   hints, size_map, set_r1cs_parameters,
-                  filename="voproof_r1cs_prover_efficient")
+                  filename=None if dry_run else "voproof_r1cs_prover_efficient")
 
 
 def set_hpr_parameters():
@@ -211,7 +211,7 @@ def analyzeHPR():
   execargs = (x, get_named_vector("w"), get_named_vector(
       "w"), get_named_vector("w"))
   analyzeProtocol(HPR(), ppargs, execargs, hints, size_map, set_hpr_parameters,
-                  filename="voproof_hpr")
+                  filename=None if dry_run else "voproof_hpr")
 
 
 def analyzeHPRProverEfficient():
@@ -226,7 +226,7 @@ def analyzeHPRProverEfficient():
   execargs = (x, get_named_vector("w"), get_named_vector(
       "w"), get_named_vector("w"), ell)
   analyzeProtocol(HPRProverEfficient(), ppargs, execargs,
-                  hints, size_map, set_hpr_parameters)
+                  hints, size_map, set_hpr_parameters, filename=None if dry_run else "voproof_hpr_prover_efficient")
 
 
 def set_pov_parameters():
@@ -253,7 +253,7 @@ def analyzePOV():
   execargs = (x, get_named_vector("a"),
               get_named_vector("b"), get_named_vector("c"))
   analyzeProtocol(POV(), ppargs, execargs, hints, size_map, set_pov_parameters,
-                  filename="voproof_pov")
+                  filename=None if dry_run else "voproof_pov")
 
 
 def analyzePOVProverEfficient():
@@ -272,11 +272,12 @@ def analyzePOVProverEfficient():
   execargs = (x, get_named_vector("a"),
               get_named_vector("b"), get_named_vector("c"))
   analyzeProtocol(POVProverEfficient(), ppargs, execargs,
-                  hints, size_map, set_pov_parameters, filename="voproof_pov_prover_efficient")
+                  hints, size_map, set_pov_parameters, filename=None if dry_run else "voproof_pov_prover_efficient")
 
 
 debug_mode = False
-debug_check_hadamard_side = True
+debug_check_hadamard_side = False
+dry_run = True
 
 
 def debug(info=""):
@@ -287,9 +288,9 @@ def debug(info=""):
 if __name__ == '__main__':
   if "debug" in sys.argv:
     debug_mode = True
-  #  analyzeR1CSProverEfficient()
-  #  analyzeHPRProverEfficient()
+  analyzeR1CSProverEfficient()
+  # analyzeHPRProverEfficient()
   analyzePOVProverEfficient()
-  #  analyzeR1CS()
-  #  analyzeHPR()
-  #  analyzePOV()
+  analyzeR1CS()
+  analyzeHPR()
+  analyzePOV()
